@@ -4,18 +4,25 @@
       <div class="input__div">
         <div class="input__wrapper">
           <input type="text" placeholder="Todo Item" v-model="newTodo" @keyup.enter="addTodo" />
+          <button class="flex-no-shrink" type="button" @click="addTodo"> Add </button>
+        </div>
+        <div>
+          <button class="cancel-button" type="button" @click="addTodo"> Cancal </button>
         </div>
       <div class="border"></div>
     </div>
 
       <div class="todo-list">
         <!-- Loop Over All Todos -->
-        <div v-for="todo in todos" :key="todo.id" class="list">
+        <div v-for="(todo, id) in todos" :key="id" class="list">
           <!-- Show Label -->
           <label class="material-checkbox">
-            <input type="checkbox" v-model="todo.completed">
+            <input type="checkbox" @click="updateTodo(id)" v-model="todo.completed">
             <span></span>
           </label>
+          <div class="list-menu">
+            <button class="delete" @click="deleteTodo(id)">x</button>
+          </div>
           <div class="text" :class="{completed: todo.completed}" v-if="!todo.editing" @dblclick="todo.editing = true; editTodoCache=todo.text">{{ todo.text }}</div>
           <!-- Show Text Box -->
           <div class="input__div" v-else>
@@ -29,6 +36,9 @@
     </div>
     <footer>
       <span>{{ remaining }} items left.</span>
+      <div class="delete-button">
+        <button class="Delete" type="button" @click="removeCompleted"> Clear All </button>
+      </div> 
     </footer>
   </div>
 </template>
@@ -39,7 +49,6 @@ export default {
 
   data() {
     return {
-      last_id: 2,
       newTodo: "",
       editTodoCache: "",
       todos: [
@@ -54,17 +63,22 @@ export default {
     }
   },
 
+  created() {
+    this.todos = JSON.parse(localStorage.getItem("todo")) || []
+  },
+
   methods: {
     addTodo() {
       if (this.newTodo.trim() == "") return;
       let todo = {
-        id: ++this.last_id,
         text: this.newTodo,
-        components: false,
+        completed: false,
         editing: false
       };
       this.todos.push(todo);
+      console.log(this.todos)
       this.newTodo = "";
+      this.updateLocalStorage();
     },
     editTodo(todo) {
       if (todo.text.trim() == "") todo.text = this.editTodoCache;
@@ -73,7 +87,26 @@ export default {
     cancelEdit(todo) {
       todo.text = this.editTodoCache;
       todo.editing = false;
+    },
+
+    updateLocalStorage() {
+      localStorage.setItem("todo", JSON.stringify(this.todos))
+    },
+    updateTodo(id) {
+      this.todos[id].completed = !this.todos[id].completed;
+      this.updateLocalStorage();
+    },
+
+    deleteTodo(id) {
+      this.todos[id].completed = !this.todos[id].completed;
+      this.updateLocalStorage();
+    },
+
+    removeCompleted(){
+      this.todos = this.todos.filter(todo => !todo.completed)
+      this.updateLocalStorage();
     }
+
   },
 
   directives: {
@@ -87,6 +120,7 @@ export default {
 </script>
 
 <style scoped>
+
 .container {
   min-height: 300px;
   display: flex;
@@ -97,10 +131,43 @@ footer {
   padding: 8px 15px;
   background: #76dbae;
   border-radius: 3px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .todo-list {
   padding: 8px 0;
+}
+
+.flex-no-shrink{
+  position: absolute;
+  right: 55px;
+  background-color: #76dbae;
+  top:0em;
+  height: 35px;
+  z-index: 0;
+  color: #000;
+}
+
+.cancel-button {
+  position: absolute;
+  right: 0px;
+  background-color: red;
+  top:0em;
+  height: 35px;
+  z-index: 0;
+}
+
+.list-menu {
+  position:absolute;
+  right:0px;
+  top:1em;
+  background-color:yellow;
+  z-index:0;
+}
+
+.delete-button .Delete {
+  background-color: #76dbae;
 }
 
 .todo-list .list:hover {
@@ -111,6 +178,7 @@ footer {
   display: flex;
   align-items: center;
   padding: 0 15px;
+  position: relative;
 }
 
 .todo-list .list .text {
